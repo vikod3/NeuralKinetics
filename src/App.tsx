@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { Plus } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 const LogoIcon = () => (
   <svg 
@@ -89,12 +90,112 @@ const Navbar = () => {
   );
 };
 
+const HandSequence = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imagesRef = useRef<HTMLImageElement[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const frameRef = useRef(0);
+  const totalFrames = 61;
+
+  useEffect(() => {
+    let loadedCount = 0;
+    const imgs: HTMLImageElement[] = [];
+
+    for (let i = 1; i <= totalFrames; i++) {
+      const img = new Image();
+      const frameNum = i.toString().padStart(3, '0');
+      img.src = `/hands-sequence/ezgif-frame-${frameNum}.png`;
+      img.onload = () => {
+        loadedCount++;
+        if (loadedCount === totalFrames) {
+          imagesRef.current = imgs;
+          setIsLoaded(true);
+        }
+      };
+      imgs[i - 1] = img;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    let requestId: number;
+    let lastTime = 0;
+    const fps = 20; // Increased to 20 for a more fluid and lifelike feel
+    const interval = 1000 / fps;
+
+    const render = (time: number) => {
+      const deltaTime = time - lastTime;
+
+      if (deltaTime > interval) {
+        lastTime = time - (deltaTime % interval);
+
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        const img = imagesRef.current[frameRef.current];
+
+        if (ctx && canvas && img) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          const iW = img.width;
+          const iH = img.height;
+          const cW = canvas.width / (window.devicePixelRatio || 1);
+          const cH = canvas.height / (window.devicePixelRatio || 1);
+          
+          // Mimic object-cover behavior
+          const scale = Math.max(cW / iW, cH / iH);
+          const x = (cW - iW * scale) / 2;
+          const y = (cH - iH * scale) / 2;
+          
+          ctx.drawImage(img, x, y, iW * scale, iH * scale);
+          
+          if (frameRef.current < totalFrames - 1) {
+            frameRef.current = frameRef.current + 1;
+          } else {
+            return; // Stop animation loop at the last frame
+          }
+        }
+      }
+      requestId = requestAnimationFrame(render);
+    };
+
+    requestId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(requestId);
+  }, [isLoaded]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasRef.current) {
+        const dpr = window.devicePixelRatio || 1;
+        canvasRef.current.width = window.innerWidth * dpr;
+        canvasRef.current.height = window.innerHeight * dpr;
+        const ctx = canvasRef.current.getContext('2d');
+        if (ctx) ctx.scale(dpr, dpr);
+        
+        canvasRef.current.style.width = `${window.innerWidth}px`;
+        canvasRef.current.style.height = `${window.innerHeight}px`;
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ opacity: isLoaded ? 1 : 0, transition: 'opacity 1.5s ease-in-out' }}
+    />
+  );
+};
+
 export default function App() {
   return (
     <div className="relative min-h-screen w-full flex flex-col justify-between bg-white text-black font-sans antialiased selection:bg-black selection:text-white overflow-hidden">
       <Navbar />
 
-      {/* Background Graphic Canvas – Ambient base video matching the reference exactly */}
+      {/* Background Graphic Canvas – Ambient base video restored */}
       <div className="absolute inset-0 z-0 pointer-events-none select-none flex items-center justify-center overflow-hidden">
         <motion.div 
           initial={{ opacity: 0, scale: 1.05 }}
@@ -136,7 +237,7 @@ export default function App() {
         </div>
       </main>
 
-      {/* Layered Bionic Interface GIF – Positioned in front of the central heading */}
+      {/* Layered Hands Sequence – Positioned on top of the central heading */}
       <div className="absolute inset-0 z-20 pointer-events-none select-none flex items-center justify-center overflow-hidden">
         <motion.div 
           initial={{ opacity: 0, scale: 1.05 }}
@@ -144,12 +245,7 @@ export default function App() {
           transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
           className="w-full h-full"
         >
-          <img 
-            src="https://res.cloudinary.com/dy5er7kv5/image/upload/q_auto/f_auto/v1780132029/download_1_xq1bd0.gif"
-            alt="Bionic Interface Animation"
-            className="w-full h-full object-cover pointer-events-none"
-            referrerPolicy="no-referrer"
-          />
+          <HandSequence />
         </motion.div>
       </div>
 
