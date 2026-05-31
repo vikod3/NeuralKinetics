@@ -1,0 +1,8 @@
+{
+  "name": "Remix: NeuralKinetics",
+  "description": "Advanced bionics and neuromorphic systems unifying human elegance with machine capability.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
