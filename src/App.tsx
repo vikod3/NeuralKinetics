@@ -135,12 +135,13 @@ const HandSequence = () => {
         const img = imagesRef.current[frameRef.current];
 
         if (ctx && canvas && img) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          
+          const dpr = window.devicePixelRatio || 1;
+          const cW = canvas.width / dpr;
+          const cH = canvas.height / dpr;
+          ctx.clearRect(0, 0, cW, cH);
+
           const iW = img.width;
           const iH = img.height;
-          const cW = canvas.width / (window.devicePixelRatio || 1);
-          const cH = canvas.height / (window.devicePixelRatio || 1);
           
           // Mimic object-cover behavior
           const scale = Math.max(cW / iW, cH / iH);
