@@ -121,10 +121,16 @@ const HandSequence = () => {
 
     let requestId: number;
     let lastTime = 0;
-    const fps = 20; // Increased to 20 for a more fluid and lifelike feel
+    let isDrawing = false;
+    const fps = 20;
     const interval = 1000 / fps;
 
     const render = (time: number) => {
+      if (isDrawing) {
+        requestId = requestAnimationFrame(render);
+        return;
+      }
+
       const deltaTime = time - lastTime;
 
       if (deltaTime > interval) {
@@ -135,6 +141,8 @@ const HandSequence = () => {
         const img = imagesRef.current[frameRef.current];
 
         if (ctx && canvas && img) {
+          isDrawing = true;
+
           const dpr = window.devicePixelRatio || 1;
           const cW = canvas.width / dpr;
           const cH = canvas.height / dpr;
@@ -142,18 +150,19 @@ const HandSequence = () => {
 
           const iW = img.width;
           const iH = img.height;
-          
-          // Mimic object-cover behavior
+
           const scale = Math.max(cW / iW, cH / iH);
           const x = (cW - iW * scale) / 2;
           const y = (cH - iH * scale) / 2;
-          
+
           ctx.drawImage(img, x, y, iW * scale, iH * scale);
-          
+
+          isDrawing = false;
+
           if (frameRef.current < totalFrames - 1) {
             frameRef.current = frameRef.current + 1;
           } else {
-            return; // Stop animation loop at the last frame
+            return;
           }
         }
       }
